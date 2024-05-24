@@ -6,17 +6,24 @@ export default class Client {
     this.url = url;
   }
 
-  async getStatus(): Promise<string> {
+  private async getStatus(): Promise<string> {
     try {
-      const res = await axios.get(`${this.url}/status`);
+      const res = await axios({
+        method: "get",
+        url: `${this.url}/status`,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      console.log(res.data);
       return res.data.status;
     } catch (error) {
-      console.error(`${error}`);
+      console.log({ status: "error" });
       return "error";
     }
   }
 
-  async callAgain(initialDelay: number, maxDelay: number) {
+  public async complete(initialDelay: number, maxDelay: number) {
     let delay = initialDelay;
     while (true) {
       const status: string = await this.getStatus();
@@ -24,12 +31,14 @@ export default class Client {
         return status;
       } else {
         await this.sleep(delay);
+        console.log(delay)
         delay = Math.min(delay * 1.5, maxDelay);
       }
     }
   }
 
-  async sleep(delay: number) {
+  // simulate
+  private async sleep(delay: number) {
     return new Promise((resolve) => setTimeout(resolve, delay));
   }
 }
