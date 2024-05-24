@@ -20,7 +20,6 @@ export default class Client {
       console.log(res.data);
       return res.data.status;
     } catch (error) {
-      console.log({ status: "error" });
       return "error";
     }
   }

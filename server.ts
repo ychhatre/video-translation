@@ -19,6 +19,7 @@ const random = Math.random();
 console.log(random);
 const VIDEO_THRESHOLD = random * 10000;
 
+
 let totalRequests = 0;
 
 async function updateData(information: any) {
@@ -40,7 +41,6 @@ async function updateData(information: any) {
   });
 }
 
-
 server.get("/status/:constant", (req, res) => {
   const timeElapsed = Date.now() - startTime;
   totalRequests += 1;
@@ -56,6 +56,7 @@ server.get("/status/:constant", (req, res) => {
       constant: req.params.constant,
       elapsedTime: timeElapsed / 1000,
       requests: totalRequests,
+      delay: timeElapsed - VIDEO_THRESHOLD
     });
     // video fully loaded
     return res.status(200).json({ status: "accepted" });
