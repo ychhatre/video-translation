@@ -12,7 +12,7 @@ export default class Client {
     try {
       const res = await axios({
         method: "get",
-        url: `${this.url}/status`,
+        url: `${this.url}/status/${this.expBackoffConstant}`,
         headers: {
           "Content-Type": "application/json",
         },

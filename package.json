@@ -1,9 +1,8 @@
 {
   "scripts": {
     "start": "node dist/app.js",
-    "build": "npx tsc",
     "dev": "nodemon server.ts",
-    "test": "nodemon integration.ts"
+    "test": "tsx integration.ts"
   },
   "dependencies": {
     "axios": "^1.7.2",
@@ -16,6 +15,7 @@
     "@types/axios": "^0.14.0",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
-    "@types/node": "^20.12.12"
+    "@types/node": "^20.12.12",
+    "tsx": "^4.11.0"
   }
 }
