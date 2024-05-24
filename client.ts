@@ -1,9 +1,11 @@
 import axios from "axios";
 
 export default class Client {
+  expBackoffConstant: number;
   url: string;
-  constructor(url: string) {
+  constructor(url: string, constant: number) {
     this.url = url;
+    this.expBackoffConstant = constant; 
   }
 
   private async getStatus(): Promise<string> {

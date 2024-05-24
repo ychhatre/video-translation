@@ -13,10 +13,10 @@ server.listen(PORT, () => {
 const startTime = Date.now();
 
 // approx time for video --> Math.random() used to simulate various different videos of sizes and lengths
-const VIDEO_THRESHOLD = 10000; 
+const VIDEO_THRESHOLD = Math.random() * 1000; 
 
-
-server.get("/status", (req, res) => {
+server.get("/status/:userID/", (req, res) => {
+  console.log(req.params.userID);
   const timeElapsed = Date.now() - startTime;
 
   if (timeElapsed < VIDEO_THRESHOLD) { // if video is still loading
