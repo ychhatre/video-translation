@@ -1,20 +1,11 @@
 {
-  "40796884-5da3-4139-8ef2-d5e9e7fc5082": {
+  "00425bae-466b-4906-996c-aa84666091e2": {
     "constant": 1.25,
-    "elapsedTime": 16.02,
-    "requests": 8,
-    "delay": -13.98,
+    "elapsedTime": 25.971,
+    "requests": 9,
+    "delay": -4.029,
     "configurableDelay": 30,
-    "startTime": 1716665892997,
+    "startTime": 1716666238579,
     "status": "pending"
-  },
-  "e2c3f55f-5fc3-46f2-9c22-2d250dd115f4": {
-    "constant": 1.25,
-    "elapsedTime": 30.66,
-    "requests": 11,
-    "delay": 0.66,
-    "configurableDelay": 30,
-    "startTime": 1716665979078,
-    "status": "accepted"
   }
 }

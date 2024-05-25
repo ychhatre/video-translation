@@ -14,7 +14,7 @@ server.listen(PORT, () => {
 let startTime = Date.now();
 
 // approx time for video --> Math.random() used to simulate various different videos of sizes and lengths
-let videoLength = 30000;
+let videoLength = Math.random() * 10000;
 console.log("Video processing length is " + videoLength / 1000 + " seconds!");
 
 let totalRequests = 0;
