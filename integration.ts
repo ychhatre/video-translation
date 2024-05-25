@@ -1,6 +1,12 @@
-import Client from "./client"; 
-
+import Client from "./client";
 
 //TODO: write tests using mocha and chai!
-const client = new Client("http://localhost:3000", 1.25)
-client.complete(1000, 5000)
+
+const options = {
+  initialDelay: 1000,
+  maxDelay: 5000,
+  exp_constant: 1.25,
+  maxRetries: 100,
+};
+const client = new Client("http://localhost:3000", options);
+client.completeRequest();
