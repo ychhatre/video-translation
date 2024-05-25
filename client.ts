@@ -1,5 +1,5 @@
 import axios from "axios";
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 export default class Client {
   initialDelay: number;
   maxDelay: number;
@@ -7,14 +7,16 @@ export default class Client {
   expBackoffConstant: number;
   url: string;
   currentRetries: number = 0;
-  jobID: any; 
+  jobID: any;
+
+  disconnect: boolean = false;
   constructor(url: string, options: any = {}) {
     this.url = url;
     this.expBackoffConstant = options.exp_constant;
     this.maxRetries = options.maxRetries;
     this.initialDelay = options.initialDelay;
     this.maxDelay = options.maxDelay;
-    this.jobID = uuidv4(); 
+    this.jobID = options.jobID ? options.jobID : uuidv4();
   }
 
   private async getStatus(needsCaching: boolean): Promise<string> {
@@ -39,18 +41,16 @@ export default class Client {
 
   public async completeRequest() {
     let delay = this.initialDelay;
-    while (this.currentRetries < this.maxRetries) {
+    while (this.currentRetries < this.maxRetries && !this.disconnect) {
       let status: string;
       if (this.currentRetries === 0) {
         status = await this.getStatus(true);
       } else {
         status = await this.getStatus(false);
       }
-      
+
       if (status == "accepted") {
-        console.log(
-          `Status is: ${status}.`
-        );
+        console.log(`Status is: ${status}.`);
         return status;
       } else {
         await this.sleep(delay);
@@ -61,12 +61,22 @@ export default class Client {
         delay = Math.min(delay * this.expBackoffConstant, this.maxDelay);
       }
     }
-    console.log(
-      `Max number of retries reached (${this.maxRetries})... Exiting with error status`
-    );
+    if (!this.disconnect) {
+      console.log(
+        `Max number of retries reached (${this.maxRetries})... Exiting with error status`
+      );
+    } else {
+      console.log(
+        `Disconnected from the server... your job is still running in the background. Here is the your jobID: ${this.jobID}`
+      );
+    }
+
     return "error";
   }
 
+  public disconnectClient() {
+    this.disconnect = true;
+  }
   // simulate
   private async sleep(delay: number) {
     return new Promise((resolve) => setTimeout(resolve, delay));

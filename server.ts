@@ -1,13 +1,10 @@
 import express from "express";
 import cors from "cors";
 import fs from "fs";
-import * as redis from "redis";
-import { uuid } from "uuid";
 
 const server = express();
 server.use(cors());
 const PORT = 3000;
-
 // server starts listening
 server.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
@@ -17,103 +14,101 @@ server.listen(PORT, () => {
 let startTime = Date.now();
 
 // approx time for video --> Math.random() used to simulate various different videos of sizes and lengths
-let videoLength = Math.random() * 10000;
-console.log("Video length is " + videoLength / 1000);
+let videoLength = 30000;
+console.log("Video processing length is " + videoLength / 1000 + " seconds!");
 
 let totalRequests = 0;
 
-// async function getCachedData(jobID: any) {
-//   fs.readFile("public/jobs.json", "utf8", (err, data) => {
-//     if (err) {
-//       console.log(err);
-//     } else {
-//       if (data.length != 0) {
-//         const jobs = JSON.parse(data);
-//         let job;
-//         for (let i = 0; i < jobs.length; i++) {
-//           if (jobs.id === jobID) {
-//             job = jobs[i];
-//           }
-//         }
-//         return job;
-//       }
-//       return null;
-//     }
-//   });
-// }
+// helper function get all jobs
+function getAllStatuses() {
+  const data = fs.readFileSync("data/jobs.json", "utf-8");
+  return data.length != 0 ? JSON.parse(data) : null;
+}
 
-// async function setCachedData(jobID: any, options: Object) {
-//   let obj: { [key: string]: any[] } = {
-//     jobs: [],
-//   };
-//   fs.readFile("public/jobs.json", "utf8", (err, data) => {
-//     if (err) {
-//       console.log(err);
-//     } else {
-//       // if the file is initially empty
-//       if (data.length != 0) {
-//         obj = JSON.parse(data);
-//       }
-//       if (!obj.jobs.some((e) => e.id === jobID)) {
-//         options["id"] = jobID;
-//         obj.jobs.push({ options });
-//         const json = JSON.stringify(obj);
-//         fs.writeFile("public/jobs.json", json, "utf8", () => {});
-//       }
-      
-//     }
-//   });
-// }
+// helper function to get a specific job status
+function getStatus(jobId) {
+  const statuses = getAllStatuses();
+  return statuses ? statuses[jobId] : null;
+}
+
+// helper function to set a specific job status
+function setStatus(jobId, status) {
+  let statuses = getAllStatuses();
+  if (!statuses) {
+    statuses = {};
+  }
+  statuses[jobId] = status;
+  fs.writeFileSync(
+    "data/jobs.json",
+    JSON.stringify(statuses, null, 2),
+    "utf-8"
+  );
+}
 
 async function updateStatsData(information: any) {
-  let obj: { [key: string]: any[] } = {
-    stats: [],
-  };
-  fs.readFile("public/stats.json", "utf8", (err, data) => {
-    if (err) {
-      console.log(err);
-    } else {
-      // if the file is initially empty
-      if (data.length != 0) {
-        obj = JSON.parse(data);
-      }
-
-      obj.stats.push(information);
-      const json = JSON.stringify(obj);
-      fs.writeFile("public/stats.json", json, "utf8", () => {});
+  try {
+    let obj = {
+      stats: [],
+    };
+    const data = fs.readFileSync("data/stats.json", "utf8");
+    if (data.length !== 0) {
+      obj = JSON.parse(data);
     }
-  });
+    obj.stats.push(information);
+    const json = JSON.stringify(obj, null, 2);
+    fs.writeFileSync("data/stats.json", json, "utf8");
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 server.get("/status", async (req, res) => {
   const params: any = req.query;
   let timeElapsed = Date.now() - startTime;
+
+  let options = {
+    constant: parseFloat(params.constant), // exponential backoff constant
+    elapsedTime: timeElapsed / 1000, // time elapsed
+    requests: totalRequests, // total amt of requests made in that time
+    delay: (timeElapsed - videoLength) / 1000, // how much longer it took than it should have
+    configurableDelay: videoLength / 1000, // how long the video took to process,
+    startTime: Date.now(),
+  };
+
+  // params passes in as string so need to convert string to boolean
+  const isCached = params.caching === "true";
+  if (isCached) {
+    let job = getStatus(params.jobID);
+    if (job) {
+      timeElapsed = Date.now() - job.startTime;
+    }
+  }
+
+  console.log(
+    `${timeElapsed / 1000} seconds have elapsed and ${
+      ((videoLength - timeElapsed) / 1000)
+    } seconds left to go`
+  );
   totalRequests += 1;
 
   if (timeElapsed < videoLength) {
-    // if video is still loading
-    const options = { status: "pending", timeLeft: videoLength - timeElapsed };
-    // setCachedData(params.jobID, options);
+    options["status"] = "pending";
+    setStatus(params.jobID, options);
     return res.status(202).json({ status: "pending" });
   } else if (Math.random() < 0.1) {
     // if there is an error after the video is done loading (Math.random() used to simulate random errors)
     return res.status(502).json({ status: "error" });
   } else if (timeElapsed > videoLength) {
     // update our local stats.json
-    updateStatsData({
-      constant: parseInt(params.constant),
-      elapsedTime: timeElapsed / 1000, // in seconds
-      requests: totalRequests - 1,
-      delay: (timeElapsed - videoLength) / 1000, // how much longer it took than it should have
-      configurableDelay: videoLength // how long the video took to process
-    });
-
+    options["status"] = "accepted";
+    setStatus(params.jobID, options);
+    updateStatsData(options);
     return res.status(200).json({ status: "accepted" });
   }
 });
 
 server.get("/stats", async (_req, res) => {
-  fs.readFile("public/stats.json", "utf8", (err, data) => {
+  fs.readFile("data/stats.json", "utf8", (err, data) => {
     if (err) {
       console.log("error is: " + err);
     } else {
@@ -122,3 +117,5 @@ server.get("/stats", async (_req, res) => {
     }
   });
 });
+
+export default server;

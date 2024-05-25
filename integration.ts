@@ -1,6 +1,4 @@
-import Client from "./client";
-
-//TODO: write tests using mocha and chai!
+import Client from "client";
 
 const options = {
   initialDelay: 1000,
@@ -9,4 +7,16 @@ const options = {
   maxRetries: 100,
 };
 const client = new Client("http://localhost:3000", options);
+console.log("Client 1 is beginning job ");
 client.completeRequest();
+setTimeout(() => {
+  console.log(
+    "Timeout being set to 5 seconds to allow Client #1 to process the request"
+  );
+}, 5000);
+client.disconnectClient();
+
+options["jobID"] = client.jobID;
+const client2 = new Client("http://localhost:3000", options);
+console.log("Client #2 is being used to resume the job monitoring");
+client2.completeRequest();
