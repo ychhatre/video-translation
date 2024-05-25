@@ -22,31 +22,50 @@ console.log("Video length is " + videoLength / 1000);
 
 let totalRequests = 0;
 
-let client: redis.RedisClientType;
+// async function getCachedData(jobID: any) {
+//   fs.readFile("public/jobs.json", "utf8", (err, data) => {
+//     if (err) {
+//       console.log(err);
+//     } else {
+//       if (data.length != 0) {
+//         const jobs = JSON.parse(data);
+//         let job;
+//         for (let i = 0; i < jobs.length; i++) {
+//           if (jobs.id === jobID) {
+//             job = jobs[i];
+//           }
+//         }
+//         return job;
+//       }
+//       return null;
+//     }
+//   });
+// }
 
-(async () => {
-  client = redis.createClient();
+// async function setCachedData(jobID: any, options: Object) {
+//   let obj: { [key: string]: any[] } = {
+//     jobs: [],
+//   };
+//   fs.readFile("public/jobs.json", "utf8", (err, data) => {
+//     if (err) {
+//       console.log(err);
+//     } else {
+//       // if the file is initially empty
+//       if (data.length != 0) {
+//         obj = JSON.parse(data);
+//       }
+//       if (!obj.jobs.some((e) => e.id === jobID)) {
+//         options["id"] = jobID;
+//         obj.jobs.push({ options });
+//         const json = JSON.stringify(obj);
+//         fs.writeFile("public/jobs.json", json, "utf8", () => {});
+//       }
+      
+//     }
+//   });
+// }
 
-  client.on("error", (error) => {
-    console.log(error)
-  });
-
-  await client.connect();
-})();
-
-async function getCachedData(jobID: any) {
-  const status = await client.get(jobID);
-  if (status) {
-    return JSON.parse(status);
-  }
-  return null;
-}
-
-async function setCachedData(jobID: any, options: Object) {
-  await client.hSet("jobs", jobID, JSON.stringify(options));
-}
-
-async function updateData(information: any) {
+async function updateStatsData(information: any) {
   let obj: { [key: string]: any[] } = {
     stats: [],
   };
@@ -58,6 +77,7 @@ async function updateData(information: any) {
       if (data.length != 0) {
         obj = JSON.parse(data);
       }
+
       obj.stats.push(information);
       const json = JSON.stringify(obj);
       fs.writeFile("public/stats.json", json, "utf8", () => {});
@@ -70,29 +90,22 @@ server.get("/status", async (req, res) => {
   let timeElapsed = Date.now() - startTime;
   totalRequests += 1;
 
-  if (params.caching) {
-    const cachedResults = await getCachedData(params.jobID);
-
-    if (cachedResults) {
-      videoLength = cachedResults.timeLeft;
-    }
-  }
-
   if (timeElapsed < videoLength) {
     // if video is still loading
     const options = { status: "pending", timeLeft: videoLength - timeElapsed };
-    setCachedData(params.jobID, options);
+    // setCachedData(params.jobID, options);
     return res.status(202).json({ status: "pending" });
   } else if (Math.random() < 0.1) {
     // if there is an error after the video is done loading (Math.random() used to simulate random errors)
     return res.status(502).json({ status: "error" });
   } else if (timeElapsed > videoLength) {
     // update our local stats.json
-    updateData({
-      constant: params.constant,
+    updateStatsData({
+      constant: parseInt(params.constant),
       elapsedTime: timeElapsed / 1000, // in seconds
       requests: totalRequests - 1,
       delay: (timeElapsed - videoLength) / 1000, // how much longer it took than it should have
+      configurableDelay: videoLength // how long the video took to process
     });
 
     return res.status(200).json({ status: "accepted" });

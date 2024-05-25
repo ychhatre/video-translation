@@ -1,5 +1,5 @@
 import axios from "axios";
-import { v4 as uuidv4, uuid } from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 export default class Client {
   initialDelay: number;
   maxDelay: number;
@@ -46,8 +46,11 @@ export default class Client {
       } else {
         status = await this.getStatus(false);
       }
-
+      
       if (status == "accepted") {
+        console.log(
+          `Status is: ${status}.`
+        );
         return status;
       } else {
         await this.sleep(delay);
