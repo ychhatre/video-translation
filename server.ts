@@ -12,7 +12,7 @@ server.listen(PORT, () => {
 });
 
 // startTime used as dummy for when client wants to "access a video"
-const startTime = Date.now();
+let startTime = Date.now();
 
 // approx time for video --> Math.random() used to simulate various different videos of sizes and lengths
 const random = Math.random();
@@ -41,24 +41,31 @@ async function updateData(information: any) {
   });
 }
 
-server.get("/status/:constant", (req, res) => {
+
+server.get("/status", async (req, res) => {
+  let params: any = req.params;
+  if (!params.jobID) {
+    return res.status(400).send({ error: "Job ID not found" });
+  }
+
   const timeElapsed = Date.now() - startTime;
   totalRequests += 1;
+
   if (timeElapsed < VIDEO_THRESHOLD) {
     // if video is still loading
     return res.status(202).json({ status: "pending" });
   } else if (Math.random() < 0.1) {
-    // if there is an error while the video is loading (Math.random() used to simulate random errors)
+    // if there is an error after the video is done loading (Math.random() used to simulate random errors)
     return res.status(502).json({ status: "error" });
   } else if (timeElapsed > VIDEO_THRESHOLD) {
     // update our local database
     updateData({
-      constant: req.params.constant,
-      elapsedTime: timeElapsed / 1000,
+      constant: params.constant,
+      elapsedTime: timeElapsed / 1000, // in seconds
       requests: totalRequests,
-      delay: timeElapsed - VIDEO_THRESHOLD
+      delay: timeElapsed - VIDEO_THRESHOLD, // how much longer it took than it should have
     });
-    // video fully loaded
+
     return res.status(200).json({ status: "accepted" });
   }
 });

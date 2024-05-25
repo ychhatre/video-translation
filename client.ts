@@ -1,20 +1,22 @@
 import axios from "axios";
-
 export default class Client {
   expBackoffConstant: number;
   url: string;
   constructor(url: string, constant: number) {
     this.url = url;
-    this.expBackoffConstant = constant; 
+    this.expBackoffConstant = constant;
   }
 
   private async getStatus(): Promise<string> {
     try {
       const res = await axios({
         method: "get",
-        url: `${this.url}/status/${this.expBackoffConstant}`,
+        url: `${this.url}/status`,
         headers: {
           "Content-Type": "application/json",
+        },
+        params: {
+          constant: this.expBackoffConstant,
         },
       });
       console.log(res.data);
@@ -32,8 +34,8 @@ export default class Client {
         return status;
       } else {
         await this.sleep(delay);
-        console.log(delay)
-        delay = Math.min(delay * 1.5, maxDelay);
+        console.log(delay);
+        delay = Math.min(delay * this.expBackoffConstant, maxDelay);
       }
     }
   }
